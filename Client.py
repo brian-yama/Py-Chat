@@ -1,4 +1,4 @@
-import os,socket,sys
+import os,socket,sys,select,string
 
 def socket_closed(sock):
 	print('Socket closed')
@@ -24,12 +24,23 @@ if __name__ == "__main__":
 	host = socket.gethostname()#TODO you want to get the ip address from the sys.argv
 	sock.connect((host, int(sys.argv[1])))
 
-
-
 	while True:
 		socket_list = [sys.stdin, sock]
-		clnt_recv(sock)
-		name = raw_input() 
-		clnt_send(sock, name) 
+
+		readSock, writeSock, errSock = select.select(socket_list, [], [])
+
+		for s in readSock:
+			if s == sys.stdin:
+				message = sys.stdin.readline()
+				sock.send(message)
+				#sys.stdout.write('\n')
+				sys.stdout.flush()
+			else :
+				inbox = sock.recv(1024)
+				if inbox:
+					sys.stdout.write(inbox + '\n')
+					sys.stdout.flush()
+				else :
+					print '\nDisconnected.'
+					sys.exit()
 	
-	sock.close()                     # Close the socket when done
